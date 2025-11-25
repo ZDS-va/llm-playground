@@ -1,0 +1,13 @@
+# 忽略所有 .env 文件（包括 .env.local, .env.production 等）
+.env*
+
+# 或者只忽略特定的
+# .env
+# .env.local
+
+# 同时建议忽略 Python 缓存和虚拟环境
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
