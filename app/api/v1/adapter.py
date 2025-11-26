@@ -1,10 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.services.llm_adapter import LLMAdapter
 from app.services.llm_service import LLMService
 
 router = APIRouter()
-adaptor = LLMAdapter()
 llm_service = LLMService()
 
 class Dialogue(BaseModel):
