@@ -8,11 +8,11 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 class Settings(BaseSettings):
     # Qwen (DashScope)
     dashscope_api_key: str
-    dashscope_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-
+    dashscope_base_url: str 
     # DeepSeek / VectorEngine (可选)
     deepseek_api_key: str | None = None
     deepseek_base_url: str | None = None
+    # VectorEngine (通用)
     vectorengine_api_key: str | None = None
     vectorengine_base_url: str | None = None
 
