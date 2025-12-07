@@ -1,4 +1,5 @@
 from nt import system
+from random import choice
 from app.core.schema_loader import load_schema, validate_json_with_schema
 from app.services.adapter_factory import get_adapter
 from app.services.adapters.base_adapter import BaseAdapter
@@ -7,6 +8,8 @@ from app.services.adapters.qwen_adapter import QwenAdapter
 from app.core.prompt_loader import load_prompt
 import json
 import logging
+
+from app.services.tools import TOOLS, TOOLS_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -74,3 +77,57 @@ Please output STRICT JSON only."""
         if success:
             return data
         return {"error": f"Second time summary attempt failed: {err}"}
+
+    def chat_with_tools(self, model: str, question: str):
+        system_prompt = load_prompt("tools.md")
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question},
+        ]
+
+        adapter = get_adapter(model)
+
+        completion = adapter.chat_with_tools(model, messages, TOOLS_SCHEMA, "auto")
+
+        choice = completion.choices[0]
+        finish_reason = choice.finish_reason
+        assistant_msg = choice.message
+
+        logger.info(f"First time assistant message: {assistant_msg}")
+        if finish_reason == "stop" and assistant_msg.content:
+            return assistant_msg.content
+
+        if finish_reason == "tool_calls":
+            tool_call = assistant_msg.tool_calls[0]
+            func_name = tool_call.function.name
+
+            try:
+                args = json.loads(tool_call.function.arguments)
+            except json.JSONDecodeError:
+                return {"error": "Tool arguments are not valid JSON"}
+
+            tool = TOOLS.get(func_name)
+            logger.info(f"Tool {func_name} found: {tool}")
+            if not tool:
+                return {"error": f"Tool {func_name} not found"}
+
+            tool_result = tool.call(**args)
+
+            messages.append(
+                {"role": "assistant", "content": None, "tool_calls": [tool_call]}
+            )
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(tool_result),
+                }
+            )
+
+            final_completion = adapter.chat_with_tools(
+                model, messages, TOOLS_SCHEMA, "none"
+            )
+            final_msg = final_completion.choices[0].message
+            return final_msg.content or "工具调用完成，但模型无文本回答"
+        return f"Unexcepted finish_reason: {finish_reason}"
