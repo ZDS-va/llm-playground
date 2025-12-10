@@ -1,10 +1,5 @@
-from nt import system
-from random import choice
 from app.core.schema_loader import load_schema, validate_json_with_schema
 from app.services.adapter_factory import get_adapter
-from app.services.adapters.base_adapter import BaseAdapter
-from app.services.adapters.deepseek_adapter import DeepseekAdapter
-from app.services.adapters.qwen_adapter import QwenAdapter
 from app.core.prompt_loader import load_prompt
 import json
 import logging
@@ -17,9 +12,9 @@ logger = logging.getLogger(__name__)
 class LLMService:
     def chat(self, model: str, question: str):
         adapter = get_adapter(model)
-        system_prompt = load_prompt("chat_default.md")
+        prompt_info = load_prompt("chat_default")
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": prompt_info["role"], "name": prompt_info["name"], "content": prompt_info["content"]},
             {"role": "user", "content": question},
         ]
         result = adapter.chat(model, messages)
@@ -27,9 +22,9 @@ class LLMService:
 
     async def chat_stream(self, model: str, question: str):
         adapter = get_adapter(model)
-        system_prompt = load_prompt("chat_default.md")
+        prompt_info = load_prompt("chat_default")
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": prompt_info["role"], "name": prompt_info["name"], "content": prompt_info["content"]},
             {"role": "user", "content": question},
         ]
         completion = adapter.chat(model, messages, stream=True)
@@ -38,10 +33,10 @@ class LLMService:
         yield "data: [DONE]\n\n"
 
     def summary_to_json(self, model: str, question: str):
-        system_prompt = load_prompt("summary_ch.md")
+        prompt_info = load_prompt("summary_ch")
         schema = load_schema("summary")
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": prompt_info["role"], "name": prompt_info["name"], "content": prompt_info["content"]},
             {"role": "user", "content": question},
         ]
         adapter = get_adapter(model)
@@ -79,10 +74,10 @@ Please output STRICT JSON only."""
         return {"error": f"Second time summary attempt failed: {err}"}
 
     def chat_with_tools(self, model: str, question: str):
-        system_prompt = load_prompt("tools.md")
+        prompt_info = load_prompt("tools")
 
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": prompt_info["role"], "name": prompt_info["name"], "content": prompt_info["content"]},
             {"role": "user", "content": question},
         ]
 

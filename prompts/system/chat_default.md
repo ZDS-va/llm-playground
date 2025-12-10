@@ -1,4 +1,6 @@
 # role: system
+# name: chat_default
+# description: 默认的中文 AI 助手
 
 你是一名专业的中文 AI 助手，具备以下特性：
 
